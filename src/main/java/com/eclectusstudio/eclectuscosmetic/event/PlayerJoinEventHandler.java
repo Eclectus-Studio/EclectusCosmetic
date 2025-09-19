@@ -1,5 +1,6 @@
 package com.eclectusstudio.eclectuscosmetic.event;
 
+import com.eclectusstudio.eclectuscosmetic.data.cape.Capes;
 import com.eclectusstudio.eclectuscosmetic.packet.EclectusCosmeticNetworking;
 import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeUserSend;
 import com.eclectusstudio.eclectuscosmetic.registry.CapeRegistry;
@@ -30,7 +31,7 @@ public class PlayerJoinEventHandler {
 
         for (ServerPlayer player : otherPlayers) {
             if(CapeRegistry.hasCape(player.getUUID())){
-                EclectusCosmeticNetworking.sendToPlayer(new CapeUserSend(player.getUUID(), CapeRegistry.getCape(player.getUUID()).toString()), joiningPlayer);
+                EclectusCosmeticNetworking.sendToPlayer(new CapeUserSend(player.getUUID(), Capes.INSTANCE.getCape(CapeRegistry.getCape(player.getUUID())).texture), joiningPlayer);
             }
 
         }
@@ -41,7 +42,7 @@ public class PlayerJoinEventHandler {
         List<ServerPlayer> allPlayers = server.getPlayerList().getPlayers();
         for (ServerPlayer player : allPlayers) {
             if(CapeRegistry.hasCape(joiningPlayer.getUUID())){
-                EclectusCosmeticNetworking.sendToPlayer(new CapeUserSend(joiningPlayer.getUUID(), CapeRegistry.getCape(player.getUUID()).toString()), player);
+                EclectusCosmeticNetworking.sendToPlayer(new CapeUserSend(joiningPlayer.getUUID(), Capes.INSTANCE.getCape(CapeRegistry.getCape(player.getUUID())).texture), player);
             }
         }
     }

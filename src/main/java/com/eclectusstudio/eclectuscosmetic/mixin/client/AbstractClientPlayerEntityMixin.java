@@ -23,7 +23,7 @@ public class AbstractClientPlayerEntityMixin {
         EclectusCosmetic.LOGGER.info("Mixin AbstractClientPlayerEntityMixin loaded!");
     }
 
-    @Inject(method = "getSkin", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getSkin", at = @At("RETURN"), cancellable = true,order=100000)
     private void getSkin(CallbackInfoReturnable<PlayerSkin> cir) {
         if(ClientCapeCache.has(playerInfo.getProfile().getId())){
             ResourceLocation cape = ClientCapeCache.get(playerInfo.getProfile().getId());

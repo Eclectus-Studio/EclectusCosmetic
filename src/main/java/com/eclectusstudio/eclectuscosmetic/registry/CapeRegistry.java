@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class CapeRegistry {
-    private static final Map<UUID, ResourceLocation> CAPES = new HashMap<>();
+    public static final Map<UUID, ResourceLocation> CAPES = new HashMap<>();
 
     public static void setCape(UUID uuid, ResourceLocation cape) {
         CAPES.put(uuid, cape);

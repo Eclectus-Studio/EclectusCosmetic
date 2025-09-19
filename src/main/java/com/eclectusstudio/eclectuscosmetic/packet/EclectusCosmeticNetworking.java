@@ -1,8 +1,6 @@
 package com.eclectusstudio.eclectuscosmetic.packet;
 
 import com.eclectusstudio.eclectuscosmetic.EclectusCosmetic;
-import com.eclectusstudio.eclectuscosmetic.client.ClientReloadCape;
-import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeReload;
 import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeUserGet;
 import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeUserSend;
 import net.minecraft.resources.ResourceLocation;
@@ -20,15 +18,6 @@ public class EclectusCosmeticNetworking {
             .simpleChannel();
 
     public static void register() {
-        CHANNEL.messageBuilder(CapeReload.class, NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(CapeReload::encode)
-                .decoder(CapeReload::new)
-                .consumerMainThread((msg, ctx) -> {
-                    ClientReloadCape.reload(); // Do client-only stuff here
-                    ctx.setPacketHandled(true);
-                })
-                .add();
-
         CHANNEL.messageBuilder(CapeUserGet.class, NetworkDirection.PLAY_TO_SERVER)
                 .encoder(CapeUserGet::encode)
                 .decoder(CapeUserGet::new)
