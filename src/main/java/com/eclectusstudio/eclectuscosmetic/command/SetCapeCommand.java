@@ -5,7 +5,7 @@ import com.eclectusstudio.eclectuscosmetic.data.cape.Capes;
 import com.eclectusstudio.eclectuscosmetic.packet.EclectusCosmeticNetworking;
 import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeUserSend;
 import com.eclectusstudio.eclectuscosmetic.registry.CapeRegistry;
-import com.eclectusstudio.eclectuscosmetic.storage.EquippedCapeStorage;
+import com.eclectusstudio.eclectuscosmetic.registry.UnlockedCapeRegistry;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -37,6 +37,11 @@ public class SetCapeCommand {
                                 return 0;
                             }
 
+                            if (!UnlockedCapeRegistry.hasUnlocked(player.getUUID(), capeId)) {
+                                ctx.getSource().sendFailure(Component.literal("❌ You have not unlocked this cape yet!"));
+                                return 0;
+                            }
+
                             // Register the cape for the player
                             CapeRegistry.setCape(player.getUUID(), capeId);
 
@@ -44,7 +49,6 @@ public class SetCapeCommand {
                             EclectusCosmeticNetworking.sendToAllClients(
                                     new CapeUserSend(player.getUUID(), cape.texture)
                             );
-
                             ctx.getSource().sendSuccess(() -> Component.literal("✅ Set your cape to: " + cape.name), false);
                             return 1;
                         })));

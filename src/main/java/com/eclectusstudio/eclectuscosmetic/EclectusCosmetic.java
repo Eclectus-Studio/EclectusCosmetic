@@ -2,9 +2,13 @@ package com.eclectusstudio.eclectuscosmetic;
 
 import com.eclectusstudio.eclectuscosmetic.command.GetCapesCommand;
 import com.eclectusstudio.eclectuscosmetic.command.SetCapeCommand;
+import com.eclectusstudio.eclectuscosmetic.command.UnlockCapeCommand;
+import com.eclectusstudio.eclectuscosmetic.command.UnlockedCapesCommand;
+import com.eclectusstudio.eclectuscosmetic.data.advancementcape.AdvancementCapes;
 import com.eclectusstudio.eclectuscosmetic.data.cape.Capes;
 import com.eclectusstudio.eclectuscosmetic.packet.EclectusCosmeticNetworking;
 import com.eclectusstudio.eclectuscosmetic.storage.EquippedCapeStorage;
+import com.eclectusstudio.eclectuscosmetic.storage.UnlockedCapeStorage;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.layers.Deadmau5EarsLayer;
@@ -43,6 +47,7 @@ public class EclectusCosmetic {
         modEventBus.addListener(this::commonSetup);
 
         MinecraftForge.EVENT_BUS.addListener((AddReloadListenerEvent event) -> {
+            event.addListener(AdvancementCapes.INSTANCE);
             event.addListener(Capes.INSTANCE);
         });
 
@@ -50,7 +55,11 @@ public class EclectusCosmetic {
         MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> {
             GetCapesCommand.register(event.getDispatcher());
             SetCapeCommand.register(event.getDispatcher());
+            UnlockCapeCommand.register(event.getDispatcher());
+            UnlockedCapesCommand.register(event.getDispatcher());
         });
+
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
@@ -61,7 +70,7 @@ public class EclectusCosmetic {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
+        LOGGER.info("Starting Eclectus Cosmetic Server Side");
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
@@ -70,9 +79,7 @@ public class EclectusCosmetic {
 
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            // Some client setup code
-            LOGGER.info("HELLO FROM CLIENT SETUP");
-            LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+            LOGGER.info("Starting Eclectus Cosmetic Client Side");
         }
     }
 
@@ -83,8 +90,10 @@ public class EclectusCosmetic {
 
         Path worldSavePath = level.getServer().getWorldPath(LevelResource.ROOT);
         EquippedCapeStorage.init(worldSavePath);
+        UnlockedCapeStorage.init(worldSavePath);
 
         EquippedCapeStorage.loadFromSerializer();
+        UnlockedCapeStorage.loadFromSerializer();
     }
 
 
@@ -94,5 +103,6 @@ public class EclectusCosmetic {
         if (!level.dimension().equals(Level.OVERWORLD)) return;
 
         EquippedCapeStorage.saveToSerializer();
+        UnlockedCapeStorage.saveToSerializer();
     }
 }

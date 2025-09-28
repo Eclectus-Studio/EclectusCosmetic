@@ -23,24 +23,23 @@ public class EquippedCapeStorage {
 
     public static void init(Path worldSaveDirectory) {
         saveDir = worldSaveDirectory.resolve(EclectusCosmetic.MODID);
-        File file = getFile();
 
         try {
-            // Create directory if missing
             if (!Files.exists(saveDir)) {
                 Files.createDirectories(saveDir);
-                EclectusCosmetic.LOGGER.info("Created folder: {}", saveDir);
+                EclectusCosmetic.LOGGER.info("Created equipped cape save dir: {}", saveDir);
             }
 
-            // Create file if missing
+            File file = getFile();
             if (!file.exists()) {
-                file.createNewFile();
-                try (FileWriter writer = new FileWriter(file)) {
-                    writer.write("[]"); // empty JSON array
+                if (file.createNewFile()) {
+                    try (FileWriter writer = new FileWriter(file)) {
+                        writer.write("{}"); // empty JSON object
+                    }
+                    EclectusCosmetic.LOGGER.info("Created new equipped.json at {}", file.getAbsolutePath());
                 }
-                EclectusCosmetic.LOGGER.info("Created file: {}", file);
             } else {
-                EclectusCosmetic.LOGGER.info("File already exists: {}", file);
+                EclectusCosmetic.LOGGER.info("Equiped cape save file already exists: {}", file.getAbsolutePath());
             }
         } catch (Exception e) {
             EclectusCosmetic.LOGGER.error("Failed to initialize EquippedCapeStorage", e);
