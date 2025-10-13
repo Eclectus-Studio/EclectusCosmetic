@@ -29,6 +29,7 @@ public class GetCapesCommand {
                                 Cape cape = entry.getValue();
                                 String message = "- " + cape.name + " (Texture: " + cape.texture + ")";
                                 source.sendSuccess(() -> Component.literal(message), false);
+                                return 0;
                             }
 
                             return 1;
