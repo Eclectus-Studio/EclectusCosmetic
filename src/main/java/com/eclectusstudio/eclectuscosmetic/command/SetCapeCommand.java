@@ -3,7 +3,7 @@ package com.eclectusstudio.eclectuscosmetic.command;
 import com.eclectusstudio.eclectuscosmetic.data.cape.Cape;
 import com.eclectusstudio.eclectuscosmetic.data.cape.Capes;
 import com.eclectusstudio.eclectuscosmetic.packet.EclectusCosmeticNetworking;
-import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeUserSend;
+import com.eclectusstudio.eclectuscosmetic.packet.record.CapeData;
 import com.eclectusstudio.eclectuscosmetic.registry.CapeRegistry;
 import com.eclectusstudio.eclectuscosmetic.registry.UnlockedCapeRegistry;
 import com.mojang.brigadier.CommandDispatcher;
@@ -15,6 +15,7 @@ import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 
 import java.util.Map;
@@ -46,9 +47,7 @@ public class SetCapeCommand {
                             CapeRegistry.setCape(player.getUUID(), capeId);
 
                             // Send the ACTUAL texture to all clients
-                            EclectusCosmeticNetworking.sendToAllClients(
-                                    new CapeUserSend(player.getUUID(), cape.texture)
-                            );
+                            PacketDistributor.sendToAllPlayers(new CapeData(player.getStringUUID(), cape.texture));
                             ctx.getSource().sendSuccess(() -> Component.literal("✅ Set your cape to: " + cape.name), false);
                             return 1;
                         })));

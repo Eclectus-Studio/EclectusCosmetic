@@ -1,47 +1,23 @@
 package com.eclectusstudio.eclectuscosmetic.packet;
 
-import com.eclectusstudio.eclectuscosmetic.EclectusCosmetic;
-import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeUserGet;
-import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeUserSend;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.ChannelBuilder;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.SimpleChannel;
+import com.eclectusstudio.eclectuscosmetic.packet.capes.CapeClientPayloadHandler;
+import com.eclectusstudio.eclectuscosmetic.packet.record.CapeData;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public class EclectusCosmeticNetworking {
-    private static final SimpleChannel CHANNEL = ChannelBuilder.named(
-                     ResourceLocation.fromNamespaceAndPath(EclectusCosmetic.MODID, "main"))
-            .networkProtocolVersion(1)
-            .serverAcceptedVersions((status, version) -> true)
-            .clientAcceptedVersions((status, version) -> true)
-            .simpleChannel();
 
-    public static void register() {
-        CHANNEL.messageBuilder(CapeUserGet.class, NetworkDirection.PLAY_TO_SERVER)
-                .encoder(CapeUserGet::encode)
-                .decoder(CapeUserGet::new)
-                .consumerMainThread(CapeUserGet::handle)
-                .add();
+    @SubscribeEvent
+    public void register(final RegisterPayloadHandlersEvent event) {
 
-        CHANNEL.messageBuilder(CapeUserSend.class, NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(CapeUserSend::encode)
-                .decoder(CapeUserSend::new)
-                .consumerMainThread(CapeUserSend::handle)
-                .add();
+        final PayloadRegistrar registrar = event.registrar("1");
 
+        // Client-bound: CapeUserSend
+        registrar.playToClient(
+                CapeData.TYPE,
+                CapeData.STREAM_CODEC,
+                CapeClientPayloadHandler::handleDataOnMain
+        );
     }
-
-    public static void sendToAllClients(Object msg) {
-        CHANNEL.send(msg, PacketDistributor.ALL.noArg());
-    }
-
-    public static void sendToServer(Object msg) {
-        CHANNEL.send(msg, PacketDistributor.SERVER.noArg());
-    }
-
-    public static void sendToPlayer(Object msg, net.minecraft.server.level.ServerPlayer player) {
-        CHANNEL.send(msg, PacketDistributor.PLAYER.with(player));
-    }
-
 }

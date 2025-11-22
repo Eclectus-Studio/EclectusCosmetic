@@ -6,32 +6,30 @@ import com.eclectusstudio.eclectuscosmetic.command.UnlockCapeCommand;
 import com.eclectusstudio.eclectuscosmetic.command.UnlockedCapesCommand;
 import com.eclectusstudio.eclectuscosmetic.data.advancementcape.AdvancementCapes;
 import com.eclectusstudio.eclectuscosmetic.data.cape.Capes;
+import com.eclectusstudio.eclectuscosmetic.event.AdvancementUnlockEventHandler;
+import com.eclectusstudio.eclectuscosmetic.event.PlayerJoinEventHandler;
 import com.eclectusstudio.eclectuscosmetic.packet.EclectusCosmeticNetworking;
 import com.eclectusstudio.eclectuscosmetic.storage.EquippedCapeStorage;
 import com.eclectusstudio.eclectuscosmetic.storage.UnlockedCapeStorage;
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.entity.layers.Deadmau5EarsLayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
 
-// The value here should match an entry in the META-INF/mods.toml file
+// The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(EclectusCosmetic.MODID)
 public class EclectusCosmetic {
 
@@ -40,30 +38,22 @@ public class EclectusCosmetic {
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public EclectusCosmetic(FMLJavaModLoadingContext context) {
-        IEventBus modEventBus = context.getModEventBus();
+    public EclectusCosmetic(IEventBus modEventBus, ModContainer modContainer) {
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
-        MinecraftForge.EVENT_BUS.addListener((AddReloadListenerEvent event) -> {
-            event.addListener(AdvancementCapes.INSTANCE);
-            event.addListener(Capes.INSTANCE);
-        });
+        // Gameplay events MUST go to NeoForge.EVENT_BUS:
+        NeoForge.EVENT_BUS.addListener(this::onReload);
+        NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
 
-        //Commands
-        MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> {
-            GetCapesCommand.register(event.getDispatcher());
-            SetCapeCommand.register(event.getDispatcher());
-            UnlockCapeCommand.register(event.getDispatcher());
-            UnlockedCapesCommand.register(event.getDispatcher());
-        });
-
-        MinecraftForge.EVENT_BUS.register(this);
+        // Register gameplay event handlers
+        NeoForge.EVENT_BUS.register(new PlayerJoinEventHandler());
+        NeoForge.EVENT_BUS.register(new AdvancementUnlockEventHandler());
+        modEventBus.register(new EclectusCosmeticNetworking());
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        EclectusCosmeticNetworking.register();
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
@@ -71,16 +61,6 @@ public class EclectusCosmetic {
     public void onServerStarting(ServerStartingEvent event) {
         // Do something when the server starts
         LOGGER.info("Starting Eclectus Cosmetic Server Side");
-    }
-
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
-    @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static class ClientModEvents {
-
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event) {
-            LOGGER.info("Starting Eclectus Cosmetic Client Side");
-        }
     }
 
     @SubscribeEvent
@@ -104,5 +84,17 @@ public class EclectusCosmetic {
 
         EquippedCapeStorage.saveToSerializer();
         UnlockedCapeStorage.saveToSerializer();
+    }
+
+    private void onReload(AddReloadListenerEvent event) {
+        event.addListener(AdvancementCapes.INSTANCE);
+        event.addListener(Capes.INSTANCE);
+    }
+
+    private void onRegisterCommands(RegisterCommandsEvent event) {
+        GetCapesCommand.register(event.getDispatcher());
+        SetCapeCommand.register(event.getDispatcher());
+        UnlockCapeCommand.register(event.getDispatcher());
+        UnlockedCapesCommand.register(event.getDispatcher());
     }
 }
