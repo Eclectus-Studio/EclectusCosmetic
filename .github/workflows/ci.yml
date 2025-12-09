@@ -79,7 +79,7 @@ jobs:
       - name: Extract MC version(s)
         id: mcversion
         run: |
-          VERS=$(grep -oP 'versionRange="\[\K([0-9]+\.[0-9]+)' src/main/resources/META-INF/mods.toml | sort -u)
+          VERS=$(grep -oP 'versionRange="\[\K([0-9]+\.[0-9]+)' src/main/templates/META-INF/neoforge.mods.toml | sort -u)
           JSON=$(printf '%s\n' $VERS | jq -R . | jq -s .)
           echo "json=$JSON" >> $GITHUB_OUTPUT
 
