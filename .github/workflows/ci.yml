@@ -74,13 +74,16 @@ jobs:
         run: ./gradlew build
 
       # --------------------------------------------------------
-      # Extract MC versions from mods.toml
+      # Extract MC version(s) from gradle.properties
       # --------------------------------------------------------
       - name: Extract MC version(s)
         id: mcversion
         run: |
-          VERS=$(grep -oP 'versionRange="\[\K([0-9]+\.[0-9]+)' src/main/templates/META-INF/neoforge.mods.toml | sort -u)
-          JSON=$(printf '%s\n' $VERS | jq -R . | jq -s .)
+          RANGE=$(grep "^minecraft_version_range=" gradle.properties | cut -d'=' -f2)
+          # remove brackets
+          RANGE_CLEAN=${RANGE//[\[\]]/}
+          # convert comma-separated versions to JSON array
+          JSON=$(printf '%s\n' $RANGE_CLEAN | tr ',' '\n' | jq -R . | jq -s .)
           echo "json=$JSON" >> $GITHUB_OUTPUT
 
       # --------------------------------------------------------
@@ -120,7 +123,7 @@ jobs:
             -H "Authorization: ${{ secrets.MODRINTH_TOKEN }}" \
             -H "Content-Type: multipart/form-data" \
             -F "data={
-              \"project_id\": \"eclectus-cosmetic\",
+              \"project_id\": \"eclectus-cosmetic\", 
               \"name\": \"${{ steps.prinfo.outputs.title }}\",
               \"version_number\": \"${{ steps.prinfo.outputs.title }}\",
               \"changelog\": \"${{ steps.prinfo.outputs.body }}\",
