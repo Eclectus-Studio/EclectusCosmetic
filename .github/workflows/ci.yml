@@ -83,6 +83,12 @@ jobs:
           JSON="[\"$VER\"]"
           echo "json=$JSON" >> $GITHUB_OUTPUT
 
+      - name: Read mod_version
+        id: modversion
+        run: |
+         VER=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2)
+         echo "version=$VER" >> $GITHUB_OUTPUT
+
       # --------------------------------------------------------
       # Get PR or commit info for changelog
       # --------------------------------------------------------
@@ -128,12 +134,12 @@ jobs:
             -H "Authorization: ${{ secrets.MODRINTH_TOKEN }}" \
             -H "Content-Type: multipart/form-data" \
             -F "data={
-              \"project_id\": \"eclectus-cosmetic\", 
-              \"name\": \"${{ steps.changelog.outputs.title }}\",
-              \"version_number\": \"${{ steps.changelog.outputs.title }}\",
-              \"changelog\": \"${{ steps.changelog.outputs.body }}\",
-              \"game_versions\": ${{ steps.mcversion.outputs.json }},
-              \"version_type\": \"release\",
-              \"loaders\": [\"neoforge\"]
-            }" \
-            -F "file=@${{ steps.jar.outputs.file }}"
+            \"project_id\": \"eclectus-cosmetic\",
+            \"name\": \"${{ steps.changelog.outputs.title }}\",
+            \"version_number\": \"${{ steps.modversion.outputs.version }}\",
+            \"changelog\": \"${{ steps.changelog.outputs.body }}\",
+            \"game_versions\": ${{ steps.mcversion.outputs.json }},
+            \"version_type\": \"release\",
+            \"loaders\": [\"neoforge\"]
+          }" \
+          -F "file=@${{ steps.jar.outputs.file }}"
