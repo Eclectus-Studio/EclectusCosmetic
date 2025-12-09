@@ -130,16 +130,24 @@ jobs:
       # --------------------------------------------------------
       - name: Upload to Modrinth
         run: |
+          DATA_JSON=$(jq -n \
+          --arg project_id "eclectus-cosmetic" \
+          --arg name "${{ steps.changelog.outputs.title }}" \
+          --arg version_number "${{ steps.modversion.outputs.version }}" \
+          --arg changelog "${{ steps.changelog.outputs.body }}" \
+          --argjson game_versions "${{ steps.mcversion.outputs.json }}" \
+          --argjson loaders '["neoforge"]' \
+          '{
+            project_id: $project_id,
+            name: $name,
+            version_number: $version_number,
+            changelog: $changelog,
+            game_versions: $game_versions,
+            version_type: "release",
+            loaders: $loaders
+          }')
+
           curl -X POST "https://api.modrinth.com/v2/version" \
             -H "Authorization: ${{ secrets.MODRINTH_TOKEN }}" \
-            -H "Content-Type: multipart/form-data" \
-            -F "data={
-            \"project_id\": \"eclectus-cosmetic\",
-            \"name\": \"${{ steps.changelog.outputs.title }}\",
-            \"version_number\": \"${{ steps.modversion.outputs.version }}\",
-            \"changelog\": \"${{ steps.changelog.outputs.body }}\",
-            \"game_versions\": ${{ steps.mcversion.outputs.json }},
-            \"version_type\": \"release\",
-            \"loaders\": [\"neoforge\"]
-          }" \
-          -F "file=@${{ steps.jar.outputs.file }}"
+            -F "data=@<(echo $DATA_JSON)" \
+            -F "file=@${{ steps.jar.outputs.file }}"
