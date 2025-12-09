@@ -69,7 +69,7 @@ public class UnlockCapeCommand {
             return 0;
         }
 
-        UnlockedCapeRegistry.unlockCape(player.getUUID(), capeId);
+        UnlockedCapeRegistry.unlockCape(player.getUUID(), capeId, player.getServer());
         UnlockedCapeStorage.saveToSerializer();
 
         if (source.getEntity() == player) {

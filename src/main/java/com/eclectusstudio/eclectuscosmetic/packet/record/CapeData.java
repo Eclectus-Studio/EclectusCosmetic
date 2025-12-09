@@ -7,9 +7,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-public record CapeData(String playerUUID, String  capeLocation) implements CustomPacketPayload {
+public record CapeData(String playerUUID, String capeLocation) implements CustomPacketPayload {
 
-    public static final CustomPacketPayload.Type<CapeData> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(EclectusCosmetic.MODID, "cape_networking"));
+    public static final CustomPacketPayload.Type<CapeData> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(EclectusCosmetic.MODID, "set_cape_networking"));
 
     public static final StreamCodec<ByteBuf, CapeData> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8,

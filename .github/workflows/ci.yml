@@ -1,0 +1,131 @@
+name: Build & Publish
+
+on:
+  pull_request:
+    branches: [ main ]         # PRs into main must bump version
+  push:
+    branches: [ main ]         # Every push to main publishes the mod
+
+jobs:
+
+  # --------------------------------------------------------
+  # 1) VERSION CHECK ON PR
+  # --------------------------------------------------------
+  check_version:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Read version from main
+        id: mainver
+        run: |
+          VER=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2)
+          echo "version=$VER" >> $GITHUB_OUTPUT
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          path: pr
+
+      - name: Read version from PR
+        id: prver
+        run: |
+          VER=$(grep "^mod_version=" pr/gradle.properties | cut -d'=' -f2)
+          echo "version=$VER" >> $GITHUB_OUTPUT
+
+      - name: Compare versions
+        run: |
+          MAIN=${{ steps.mainver.outputs.version }}
+          DEV=${{ steps.prver.outputs.version }}
+
+          if [ "$MAIN" = "$DEV" ]; then
+            echo "❌ ERROR: mod_version not incremented!"
+            exit 1
+          fi
+
+          echo "✔️ Version incremented — PR OK."
+
+  # --------------------------------------------------------
+  # 2) BUILD + PUBLISH ON PUSH TO MAIN
+  # --------------------------------------------------------
+  publish:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build mod
+        run: ./gradlew build
+
+      # --------------------------------------------------------
+      # Extract MC versions from mods.toml
+      # --------------------------------------------------------
+      - name: Extract MC version(s)
+        id: mcversion
+        run: |
+          VERS=$(grep -oP 'versionRange="\[\K([0-9]+\.[0-9]+)' src/main/resources/META-INF/mods.toml | sort -u)
+          JSON=$(printf '%s\n' $VERS | jq -R . | jq -s .)
+          echo "json=$JSON" >> $GITHUB_OUTPUT
+
+      # --------------------------------------------------------
+      # Get last merged PR's TITLE + BODY
+      # --------------------------------------------------------
+      - name: Get PR info for changelog
+        id: prinfo
+        run: |
+          PR=$(gh pr list --state merged --base main --limit 1 --json number | jq '.[0].number')
+          TITLE=$(gh pr view $PR --json title -q '.title')
+          BODY=$(gh pr view $PR --json body -q '.body')
+
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "body=$BODY" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --------------------------------------------------------
+      # Select the NON-SNAPSHOT release JAR
+      # --------------------------------------------------------
+      - name: Find release jar
+        id: jar
+        run: |
+          FILE=$(find build/libs -type f -name "*.jar" ! -name "*SNAPSHOT*")
+          if [ -z "$FILE" ]; then
+            echo "ERROR: No non-snapshot JAR found!"
+            exit 1
+          fi
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+
+      # --------------------------------------------------------
+      # Upload to Modrinth
+      # --------------------------------------------------------
+      - name: Upload to Modrinth
+        run: |
+          curl -X POST "https://api.modrinth.com/v2/version" \
+            -H "Authorization: ${{ secrets.MODRINTH_TOKEN }}" \
+            -H "Content-Type: multipart/form-data" \
+            -F "data={
+              \"project_id\": \"eclectus-cosmetic\",
+              \"name\": \"${{ steps.prinfo.outputs.title }}\",
+              \"version_number\": \"${{ steps.prinfo.outputs.title }}\",
+              \"changelog\": \"${{ steps.prinfo.outputs.body }}\",
+              \"game_versions\": ${{ steps.mcversion.outputs.json }},
+              \"version_type\": \"release\",
+              \"loaders\": [\"neoforge\"]
+            }" \
+            -F "file=@${{ steps.jar.outputs.file }}"

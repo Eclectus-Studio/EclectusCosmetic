@@ -17,7 +17,7 @@ public class AdvancementUnlockEventHandler {
 
         var ac = AdvancementCapes.INSTANCE.getByAdvancement(id);
         if (ac != null) {
-            UnlockedCapeRegistry.unlockCape(earnEvent.getEntity().getUUID(), ac.capeId);
+            UnlockedCapeRegistry.unlockCape(earnEvent.getEntity().getUUID(), ac.capeId, earnEvent.getEntity().getServer());
         }
     }
 }

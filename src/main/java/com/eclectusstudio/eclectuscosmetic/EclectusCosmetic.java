@@ -12,12 +12,16 @@ import com.eclectusstudio.eclectuscosmetic.packet.EclectusCosmeticNetworking;
 import com.eclectusstudio.eclectuscosmetic.storage.EquippedCapeStorage;
 import com.eclectusstudio.eclectuscosmetic.storage.UnlockedCapeStorage;
 import com.mojang.logging.LogUtils;
+import net.minecraft.client.gui.components.toasts.SystemToast;
+import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -42,6 +46,8 @@ public class EclectusCosmetic {
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::onWorldLoad);
+        modEventBus.addListener(this::onWorldSave);
 
         // Gameplay events MUST go to NeoForge.EVENT_BUS:
         NeoForge.EVENT_BUS.addListener(this::onReload);
@@ -68,7 +74,8 @@ public class EclectusCosmetic {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         if (!level.dimension().equals(Level.OVERWORLD)) return;
 
-        Path worldSavePath = level.getServer().getWorldPath(LevelResource.ROOT);
+        Path worldSavePath = level.getServer().getWorldPath(LevelResource.LEVEL_DATA_FILE).getParent();
+        LOGGER.error(worldSavePath.toString());
         EquippedCapeStorage.init(worldSavePath);
         UnlockedCapeStorage.init(worldSavePath);
 
