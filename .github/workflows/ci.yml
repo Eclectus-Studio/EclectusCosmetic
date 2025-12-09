@@ -132,24 +132,24 @@ jobs:
         run: |
           # 1. Safely generate the JSON object into a temporary file
           jq -n \
-            --arg project_id "eclectus-cosmetic" \
-            --arg name "${{ steps.changelog.outputs.title }}" \
-            --arg version_number "${{ steps.modversion.outputs.version }}" \
-            --arg changelog "${{ steps.changelog.outputs.body }}" \
-            --argjson game_versions "["1.21.1"]" \
-            --argjson loaders '["neoforge"]' \
-            '{
-              project_id: $project_id,
-              name: $name,
-              version_number: $version_number,
-              changelog: $changelog,
-              game_versions: $game_versions,
-              version_type: "release",
-              loaders: $loaders
-            }' > modrinth_data.json
-
-          # 2. Use the temporary file in the curl command
-          curl -X POST "https://api.modrinth.com/v2/version" \
-            -H "Authorization: ${{ secrets.MODRINTH_TOKEN }}" \
-            -F "data=@modrinth_data.json" \
-            -F "file=@${{ steps.jar.outputs.file }}"
+            --arg project_id "eclectus-cosmetic" \
+            --arg name "${{ steps.changelog.outputs.title }}" \
+            --arg version_number "${{ steps.modversion.outputs.version }}" \
+            --arg changelog "${{ steps.changelog.outputs.body }}" \
+            --argjson game_versions '${{ steps.mcversion.outputs.json }}' \
+            --argjson loaders '["neoforge"]' \
+            '{
+              project_id: $project_id,
+              name: $name,
+              version_number: $version_number,
+              changelog: $changelog,
+              game_versions: $game_versions,
+              version_type: "release",
+              loaders: $loaders
+            }' > modrinth_data.json
+          
+          # 2. Use the temporary file in the curl command
+          curl -X POST "https://api.modrinth.com/v2/version" \
+            -H "Authorization: ${{ secrets.MODRINTH_TOKEN }}" \
+            -F "data=@modrinth_data.json" \
+            -F "file=@${{ steps.jar.outputs.file }}"
