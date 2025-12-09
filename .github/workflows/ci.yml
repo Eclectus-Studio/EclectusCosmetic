@@ -14,49 +14,46 @@ jobs:
   check_version:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-
+    # ... (steps for check_version remain unchanged) ...
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
-
       - name: Read version from main
         id: mainver
         run: |
           VER=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2)
           echo "version=$VER" >> $GITHUB_OUTPUT
-
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           path: pr
-
       - name: Read version from PR
         id: prver
         run: |
           VER=$(grep "^mod_version=" pr/gradle.properties | cut -d'=' -f2)
           echo "version=$VER" >> $GITHUB_OUTPUT
-
       - name: Compare versions
         run: |
           MAIN=${{ steps.mainver.outputs.version }}
           DEV=${{ steps.prver.outputs.version }}
-
           if [ "$MAIN" = "$DEV" ]; then
             echo "❌ ERROR: mod_version not incremented!"
             exit 1
           fi
-
           echo "✔️ Version incremented — PR OK."
 
   # --------------------------------------------------------
-  # 2) BUILD + PUBLISH ON PUSH TO MAIN
+  # 2) BUILD + PUBLISH ON PUSH TO MAIN (mc-publish)
   # --------------------------------------------------------
   publish:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    # The 'contents: write' permission is REQUIRED for creating the GitHub Release.
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -71,91 +68,44 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build mod
+        # Run the build task that generates your JAR files
         run: ./gradlew build
 
-      # --------------------------------------------------------
-      # Extract MC version from gradle.properties
-      # --------------------------------------------------------
-      - name: Extract MC version
-        id: mcversion
-        run: |
-          VER=$(grep "^minecraft_version=" gradle.properties | cut -d'=' -f2)
-          # Format as JSON array string: '["1.21.1"]'
-          JSON="[\"$VER\"]"
-          echo "json=$JSON" >> $GITHUB_OUTPUT
-
-      - name: Read mod_version
+      - name: Extract Mod Version
         id: modversion
         run: |
+          # Reads the 'mod_version' property from gradle.properties
           VER=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2)
-          echo "version=$VER" >> $GITHUB_OUTPUT
+          echo "version=$VER" >> $GITHUB_OUTPUT  
 
       # --------------------------------------------------------
-      # Get PR or commit info for changelog
+      # Publish to Modrinth, CurseForge, and GitHub Release
       # --------------------------------------------------------
-      - name: Get title & changelog
-        id: changelog
-        run: |
-          # The logic here is fine for reading commit/PR info
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR=${{ github.event.pull_request.number }}
-            TITLE=$(gh pr view $PR --json title -q '.title')
-            BODY=$(gh pr view $PR --json body -q '.body')
-          else
-            TITLE=$(git log -1 --pretty=format:'%s')
-            BODY=$(git log -1 --pretty=format:'%b')
-            if [ -z "$BODY" ]; then
-              BODY=$TITLE
-            fi
-          fi
-
-          # The variables TITLE and BODY are now set
-          echo "title=$TITLE" >> $GITHUB_OUTPUT
-          echo "body=$BODY" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # --------------------------------------------------------
-      # Find the non-snapshot release JAR
-      # --------------------------------------------------------
-      - name: Find release jar
-        id: jar
-        run: |
-          FILE=$(find build/libs -type f -name "*.jar" ! -name "*SNAPSHOT*")
-          if [ -z "$FILE" ]; then
-            echo "ERROR: No non-snapshot JAR found!"
-            exit 1
-          fi
-          echo "file=$FILE" >> $GITHUB_OUTPUT
-
-      # --------------------------------------------------------
-      # Upload to Modrinth
-      # --------------------------------------------------------
-      - name: Upload to Modrinth
-        id: upload-to-modrinth
-        run: |
-          # 1. Safely generate the JSON object into a temporary file.
-          #    Note the single quotes around the dynamic ${{ steps.mcversion.outputs.json }}
-          #    to safely pass the JSON array string to --argjson.
-          jq -n \
-            --arg project_id "eclectus-cosmetic" \
-            --arg name "${{ steps.changelog.outputs.title }}" \
-            --arg version_number "${{ steps.modversion.outputs.version }}" \
-            --arg changelog "${{ steps.changelog.outputs.body }}" \
-            --argjson game_versions '${{ steps.mcversion.outputs.json }}' \
-            --argjson loaders '["neoforge"]' \
-            '{
-              project_id: $project_id,
-              name: $name,
-              version_number: $version_number,
-              changelog: $changelog,
-              game_versions: $game_versions,
-              version_type: "release",
-              loaders: $loaders
-            }' > modrinth_data.json
+      - name: Publish Mod Files
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          # --- Authentication ---
+          modrinth-id: eclectus-cosmetic
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          curseforge-id: 394468
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           
-          # 2. Use the temporary file in the curl command
-          curl -X POST "https://api.modrinth.com/v2/version" \
-            -H "Authorization: ${{ secrets.MODRINTH_TOKEN }}" \
-            -F "data=@modrinth_data.json" \
-            -F "file=@${{ steps.jar.outputs.file }}"
+          # --- Files and Metadata ---
+          files: |
+            build/libs/!(*-@(dev|sources|javadoc)).jar
+            build/libs/*-@(dev|sources|javadoc).jar
+          name: Eclectus Cosmetic ${{ steps.modversion.outputs.version }}
+          version: ${{ steps.modversion.outputs.version }}
+          version-type: release
+          changelog-file: CHANGELOG.*
+          
+          # --- Game Compatibility ---
+          loaders: |
+            neoforge
+          game-versions: |
+            1.21.1
+          java: |
+            21
+          retry-attempts: 2
+          retry-delay: 10000
+          fail-mode: fail
