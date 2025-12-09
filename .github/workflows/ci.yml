@@ -136,7 +136,7 @@ jobs:
             --arg name "${{ steps.changelog.outputs.title }}" \
             --arg version_number "${{ steps.modversion.outputs.version }}" \
             --arg changelog "${{ steps.changelog.outputs.body }}" \
-            --argjson game_versions "${{ steps.mcversion.outputs.json }}" \
+            --argjson game_versions "["1.21.1"]" \
             --argjson loaders '["neoforge"]' \
             '{
               project_id: $project_id,
