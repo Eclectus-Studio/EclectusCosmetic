@@ -76,15 +76,14 @@ jobs:
       # --------------------------------------------------------
       # Extract MC version(s) from gradle.properties
       # --------------------------------------------------------
-      - name: Extract MC version(s)
+      - name: Extract MC version
         id: mcversion
         run: |
-          RANGE=$(grep "^minecraft_version_range=" gradle.properties | cut -d'=' -f2)
-          # remove brackets
-          RANGE_CLEAN=${RANGE//[\[\]]/}
-          # convert comma-separated versions to JSON array
-          JSON=$(printf '%s\n' $RANGE_CLEAN | tr ',' '\n' | jq -R . | jq -s .)
+          VER=$(grep "^minecraft_version=" gradle.properties | cut -d'=' -f2)
+          # wrap in JSON array for Modrinth
+          JSON="[\"$VER\"]"
           echo "json=$JSON" >> $GITHUB_OUTPUT
+
 
       # --------------------------------------------------------
       # Get last merged PR's TITLE + BODY
