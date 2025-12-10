@@ -46,8 +46,8 @@ public class EclectusCosmetic {
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
-        modEventBus.addListener(this::onWorldLoad);
-        modEventBus.addListener(this::onWorldSave);
+
+        NeoForge.EVENT_BUS.register(this);
 
         // Gameplay events MUST go to NeoForge.EVENT_BUS:
         NeoForge.EVENT_BUS.addListener(this::onReload);
