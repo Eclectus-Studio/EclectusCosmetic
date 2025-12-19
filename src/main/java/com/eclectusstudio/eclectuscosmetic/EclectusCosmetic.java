@@ -1,5 +1,6 @@
 package com.eclectusstudio.eclectuscosmetic;
 
+import com.eclectusstudio.eclectuscosmetic.client.event.ClientDisconnectEventHandler;
 import com.eclectusstudio.eclectuscosmetic.command.GetCapesCommand;
 import com.eclectusstudio.eclectuscosmetic.command.SetCapeCommand;
 import com.eclectusstudio.eclectuscosmetic.command.UnlockCapeCommand;
@@ -12,16 +13,12 @@ import com.eclectusstudio.eclectuscosmetic.packet.EclectusCosmeticNetworking;
 import com.eclectusstudio.eclectuscosmetic.storage.EquippedCapeStorage;
 import com.eclectusstudio.eclectuscosmetic.storage.UnlockedCapeStorage;
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.gui.components.toasts.SystemToast;
-import net.minecraft.client.gui.screens.advancements.AdvancementWidget;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -46,17 +43,15 @@ public class EclectusCosmetic {
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
-
-        NeoForge.EVENT_BUS.register(this);
-
-        // Gameplay events MUST go to NeoForge.EVENT_BUS:
-        NeoForge.EVENT_BUS.addListener(this::onReload);
-        NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+        modEventBus.register(new EclectusCosmeticNetworking());
 
         // Register gameplay event handlers
+        NeoForge.EVENT_BUS.register(this);
         NeoForge.EVENT_BUS.register(new PlayerJoinEventHandler());
         NeoForge.EVENT_BUS.register(new AdvancementUnlockEventHandler());
-        modEventBus.register(new EclectusCosmeticNetworking());
+        NeoForge.EVENT_BUS.register(new ClientDisconnectEventHandler());
+        NeoForge.EVENT_BUS.addListener(this::onReload);
+        NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
