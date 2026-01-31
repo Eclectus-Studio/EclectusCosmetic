@@ -24,4 +24,8 @@ public class ClientCapeCache {
     public static void clear(){
         CAPE_MAP.clear();
     }
+
+    public static void clearPlayer(UUID uuid){
+        CAPE_MAP.remove(uuid);
+    }
 }

@@ -15,7 +15,7 @@ public class GetCapesCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("getcapes")
-                        .requires(source -> source.hasPermission(2)) // Permission level 2 = command blocks / operators
+                        .requires(source -> source.hasPermission(0))
                         .executes(context -> {
                             CommandSourceStack source = context.getSource();
 

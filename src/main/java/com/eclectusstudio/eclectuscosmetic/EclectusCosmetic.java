@@ -1,10 +1,7 @@
 package com.eclectusstudio.eclectuscosmetic;
 
 import com.eclectusstudio.eclectuscosmetic.client.event.ClientDisconnectEventHandler;
-import com.eclectusstudio.eclectuscosmetic.command.GetCapesCommand;
-import com.eclectusstudio.eclectuscosmetic.command.SetCapeCommand;
-import com.eclectusstudio.eclectuscosmetic.command.UnlockCapeCommand;
-import com.eclectusstudio.eclectuscosmetic.command.UnlockedCapesCommand;
+import com.eclectusstudio.eclectuscosmetic.command.*;
 import com.eclectusstudio.eclectuscosmetic.data.advancementcape.AdvancementCapes;
 import com.eclectusstudio.eclectuscosmetic.data.cape.Capes;
 import com.eclectusstudio.eclectuscosmetic.event.AdvancementUnlockEventHandler;
@@ -70,7 +67,6 @@ public class EclectusCosmetic {
         if (!level.dimension().equals(Level.OVERWORLD)) return;
 
         Path worldSavePath = level.getServer().getWorldPath(LevelResource.LEVEL_DATA_FILE).getParent();
-        LOGGER.error(worldSavePath.toString());
         EquippedCapeStorage.init(worldSavePath);
         UnlockedCapeStorage.init(worldSavePath);
 
@@ -98,5 +94,6 @@ public class EclectusCosmetic {
         SetCapeCommand.register(event.getDispatcher());
         UnlockCapeCommand.register(event.getDispatcher());
         UnlockedCapesCommand.register(event.getDispatcher());
+        UnequipCapeCommand.register(event.getDispatcher());
     }
 }
